@@ -1,0 +1,1344 @@
+$engine: 3
+$onesync: on
+
+name: Nightlife RolePlay - ESX OX RP Pack
+version: 3.0.0
+author: Imre2020
+description: Magyar ESX Legacy + OX RolePlay template multicharacter nélkül, fölösleges ESX resource-ok nélkül, OX inventoryval, OX targettel, telefonnal, ID card rendszerrel és RP itemekkel.
+
+variables:
+  discordLink: "discord.gg/ide-ird-a-discord-linket"
+  serverTags: "magyar, hungary, roleplay, rp, nightlife, esx, ox inventory, ox target, id card, telefon, police, ems, seriousrp"
+  serverLocale: "hu-HU"
+
+tasks:
+  ###########################################################################
+  # Alap CFX resource-ok
+  ###########################################################################
+
+  - action: download_github
+    src: https://github.com/citizenfx/cfx-server-data
+    ref: master
+    subpath: resources
+    dest: ./resources/[cfx-default]
+
+  - action: remove_path
+    path: ./resources/[cfx-default]/[gameplay]/chat
+
+  ###########################################################################
+  # Adatbázis + ESX Legacy
+  ###########################################################################
+
+  - action: connect_database
+
+  - action: download_github
+    src: https://github.com/esx-framework/esx-core
+    ref: main
+    dest: ./tmp/core
+
+  - action: query_database
+    file: ./tmp/core/[SQL]/legacy.sql
+
+  - action: download_github
+    src: https://github.com/esx-framework/ESX-Legacy-Addons
+    ref: main
+    dest: ./tmp/addons
+
+  - action: move_path
+    src: ./tmp/core/[core]
+    dest: ./resources/[core]
+
+  - action: move_path
+    src: ./tmp/addons/[esx_addons]
+    dest: ./resources/[esx_addons]
+
+  ###########################################################################
+  # ESX tisztítás: nincs multicharacter, nincs fölösleges alap inventory/phone/skin
+  ###########################################################################
+
+  # Nem kell multi karakter.
+  - action: remove_path
+    path: ./resources/[core]/esx_multicharacter
+
+  # OX inventory váltja az ESX alap inventoryt.
+  - action: remove_path
+    path: ./resources/[core]/esx_inventory
+
+  # illenium-appearance váltja az ESX skin/skinchanger rendszert.
+  - action: remove_path
+    path: ./resources/[core]/esx_skin
+
+  - action: remove_path
+    path: ./resources/[core]/skinchanger
+
+  # NPWD telefon váltja az ESX alap telefont.
+  - action: remove_path
+    path: ./resources/[esx_addons]/esx_phone
+
+  # OX inventory saját shop/weapon shop rendszer miatt ezek nem kellenek.
+  - action: remove_path
+    path: ./resources/[esx_addons]/esx_shops
+
+  - action: remove_path
+    path: ./resources/[esx_addons]/esx_weaponshop
+
+  # illenium miatt ezek nem kellenek.
+  - action: remove_path
+    path: ./resources/[esx_addons]/esx_clotheshop
+
+  - action: remove_path
+    path: ./resources/[esx_addons]/esx_barbershop
+
+  # Szerverindításhoz nem fontos / kezdésnek fölösleges ESX addonok.
+  - action: remove_path
+    path: ./resources/[esx_addons]/esx_boat
+
+  - action: remove_path
+    path: ./resources/[esx_addons]/esx_drugs
+
+  - action: remove_path
+    path: ./resources/[esx_addons]/esx_taxijob
+
+  - action: remove_path
+    path: ./resources/[esx_addons]/esx_optionalneeds
+
+  # ESX custom inventory bekapcsolása OX-hoz.
+  - action: replace_string
+    file: ./resources/[core]/es_extended/shared/config/main.lua
+    search: 'Config.CustomInventory = false'
+    replace: 'Config.CustomInventory = "ox"'
+
+  - action: replace_string
+    file: ./resources/[core]/es_extended/shared/config/main.lua
+    search: "Config.CustomInventory = false"
+    replace: 'Config.CustomInventory = "ox"'
+
+  ###########################################################################
+  # OX rendszer: oxmysql, ox_lib, ox_target, ox_inventory
+  ###########################################################################
+
+  - action: ensure_dir
+    path: ./resources/[ox]
+
+  - action: download_file
+    url: https://github.com/overextended/oxmysql/releases/latest/download/oxmysql.zip
+    path: ./tmp/files/oxmysql.zip
+
+  - action: unzip
+    src: ./tmp/files/oxmysql.zip
+    dest: ./resources/[ox]
+
+  - action: download_file
+    url: https://github.com/overextended/ox_lib/releases/latest/download/ox_lib.zip
+    path: ./tmp/files/ox_lib.zip
+
+  - action: unzip
+    src: ./tmp/files/ox_lib.zip
+    dest: ./resources/[ox]
+
+  - action: download_file
+    url: https://github.com/overextended/ox_target/releases/latest/download/ox_target.zip
+    path: ./tmp/files/ox_target.zip
+
+  - action: unzip
+    src: ./tmp/files/ox_target.zip
+    dest: ./resources/[ox]
+
+  - action: download_file
+    url: https://github.com/overextended/ox_inventory/releases/latest/download/ox_inventory.zip
+    path: ./tmp/files/ox_inventory.zip
+
+  - action: unzip
+    src: ./tmp/files/ox_inventory.zip
+    dest: ./resources/[ox]
+
+  ###########################################################################
+  # OX inventory magyar RP item patch
+  ###########################################################################
+
+  - action: replace_string
+    file: ./resources/[ox]/ox_inventory/data/items.lua
+    search: "return {"
+    replace: |
+      return {
+          ['id_card'] = {
+              label = 'Személyi igazolvány',
+              weight = 10,
+              stack = false,
+              close = true,
+              consume = 0,
+              server = { export = 'nightlife_documents.showDocument' }
+          },
+
+          ['driver_license'] = {
+              label = 'Jogosítvány',
+              weight = 10,
+              stack = false,
+              close = true,
+              consume = 0,
+              server = { export = 'nightlife_documents.showDocument' }
+          },
+
+          ['weapon_license'] = {
+              label = 'Fegyvertartási engedély',
+              weight = 10,
+              stack = false,
+              close = true,
+              consume = 0,
+              server = { export = 'nightlife_documents.showDocument' }
+          },
+
+          ['medical_card'] = {
+              label = 'Egészségügyi kártya',
+              weight = 10,
+              stack = false,
+              close = true,
+              consume = 0,
+              server = { export = 'nightlife_documents.showDocument' }
+          },
+
+          ['police_badge'] = {
+              label = 'Rendőrségi jelvény',
+              weight = 10,
+              stack = false,
+              close = true,
+              consume = 0,
+              server = { export = 'nightlife_documents.showDocument' }
+          },
+
+          ['business_card'] = {
+              label = 'Névjegykártya',
+              weight = 5,
+              stack = true,
+              close = true,
+              consume = 0
+          },
+
+          ['contract'] = {
+              label = 'Szerződés',
+              weight = 10,
+              stack = false,
+              close = true,
+              consume = 0
+          },
+
+          ['receipt'] = {
+              label = 'Nyugta',
+              weight = 5,
+              stack = true,
+              close = true,
+              consume = 0
+          },
+
+          ['evidence_bag'] = {
+              label = 'Bizonyítékos tasak',
+              weight = 25,
+              stack = true,
+              close = true,
+              consume = 0
+          },
+
+          ['handcuffs'] = {
+              label = 'Bilincs',
+              weight = 350,
+              stack = false,
+              close = true,
+              consume = 0
+          },
+
+          ['ziptie'] = {
+              label = 'Gyorskötöző',
+              weight = 50,
+              stack = true,
+              close = true,
+              consume = 0
+          },
+
+          ['bodycam'] = {
+              label = 'Testkamera',
+              weight = 250,
+              stack = false,
+              close = true,
+              consume = 0
+          },
+
+          ['dashcam'] = {
+              label = 'Fedélzeti kamera',
+              weight = 400,
+              stack = false,
+              close = true,
+              consume = 0
+          },
+
+          ['megaphone'] = {
+              label = 'Megafon',
+              weight = 800,
+              stack = false,
+              close = true,
+              consume = 0
+          },
+
+          ['repairkit'] = {
+              label = 'Szerelőkészlet',
+              weight = 1500,
+              stack = true,
+              close = true
+          },
+
+          ['medikit'] = {
+              label = 'Orvosi csomag',
+              weight = 800,
+              stack = true,
+              close = true
+          },
+
+          ['firstaid'] = {
+              label = 'Elsősegély csomag',
+              weight = 450,
+              stack = true,
+              close = true
+          },
+
+          ['tablet'] = {
+              label = 'Tablet',
+              weight = 650,
+              stack = false,
+              close = true,
+              consume = 0
+          },
+
+          ['car_document'] = {
+              label = 'Forgalmi engedély',
+              weight = 10,
+              stack = false,
+              close = true,
+              consume = 0,
+              server = { export = 'nightlife_documents.showDocument' }
+          },
+
+          ['vehicle_key'] = {
+              label = 'Járműkulcs',
+              weight = 15,
+              stack = false,
+              close = true,
+              consume = 0
+          },
+
+  - action: replace_string
+    file: ./resources/[ox]/ox_inventory/data/items.lua
+    search: "['phone'] = { label = 'Phone'"
+    replace: "['phone'] = { label = 'Telefon'"
+
+  - action: replace_string
+    file: ./resources/[ox]/ox_inventory/data/items.lua
+    search: "['identification'] = { label = 'Identification'"
+    replace: "['identification'] = { label = 'Igazolvány'"
+
+  ###########################################################################
+  # Standalone / RP alap resource-ok
+  ###########################################################################
+
+  - action: ensure_dir
+    path: ./resources/[standalone]
+
+  - action: download_github
+    src: https://github.com/Bob74/bob74_ipl
+    ref: master
+    dest: ./resources/[standalone]/bob74_ipl
+
+  - action: download_github
+    src: https://github.com/AvarianKnight/pma-voice
+    ref: main
+    dest: ./resources/[standalone]/pma-voice
+
+  - action: download_file
+    url: https://github.com/project-error/screenshot-basic/releases/download/1.0.1/screenshot-basic.zip
+    path: ./tmp/files/screenshot-basic.zip
+
+  - action: unzip
+    src: ./tmp/files/screenshot-basic.zip
+    dest: ./resources/[standalone]/screenshot-basic
+
+  ###########################################################################
+  # Kinézet / karakter szerkesztő: illenium-appearance
+  ###########################################################################
+
+  - action: download_file
+    url: https://github.com/iLLeniumStudios/illenium-appearance/releases/latest/download/illenium-appearance.zip
+    path: ./tmp/files/illenium-appearance.zip
+
+  - action: unzip
+    src: ./tmp/files/illenium-appearance.zip
+    dest: ./resources/[standalone]
+
+  - action: query_database
+    file: ./resources/[standalone]/illenium-appearance/sql/playerskins.sql
+
+  - action: query_database
+    file: ./resources/[standalone]/illenium-appearance/sql/player_outfits.sql
+
+  - action: query_database
+    file: ./resources/[standalone]/illenium-appearance/sql/player_outfit_codes.sql
+
+  - action: query_database
+    file: ./resources/[standalone]/illenium-appearance/sql/management_outfits.sql
+
+  ###########################################################################
+  # Telefon: NPWD
+  ###########################################################################
+
+  - action: ensure_dir
+    path: ./resources/[phone]
+
+  - action: download_file
+    url: https://github.com/project-error/npwd/releases/latest/download/npwd.zip
+    path: ./tmp/files/npwd.zip
+
+  - action: unzip
+    src: ./tmp/files/npwd.zip
+    dest: ./resources/[phone]
+
+  - action: query_database
+    file: ./resources/[phone]/npwd/import.sql
+
+  - action: replace_string
+    file: ./resources/[phone]/npwd/config.json
+    search: '"useResourceIntegration": false'
+    replace: '"useResourceIntegration": true'
+
+  - action: replace_string
+    file: ./resources/[phone]/npwd/config.json
+    search: '"level": "silly"'
+    replace: '"level": "error"'
+
+  - action: replace_string
+    file: ./resources/[phone]/npwd/config.json
+    search: '"defaultLanguage": "en"'
+    replace: '"defaultLanguage": "hu"'
+
+  ###########################################################################
+  # Nightlife magyar RP dokumentum rendszer
+  ###########################################################################
+
+  - action: ensure_dir
+    path: ./resources/[nightlife]/nightlife_documents
+
+  - action: write_file
+    file: ./resources/[nightlife]/nightlife_documents/fxmanifest.lua
+    data: |
+      fx_version 'cerulean'
+      game 'gta5'
+
+      author 'Imre2020'
+      description 'Nightlife RolePlay - magyar irat és igazolvány rendszer OX inventory metadata-val'
+      version '1.0.0'
+
+      lua54 'yes'
+
+      shared_scripts {
+          '@ox_lib/init.lua',
+          'config.lua'
+      }
+
+      client_scripts {
+          'client.lua'
+      }
+
+      server_scripts {
+          '@oxmysql/lib/MySQL.lua',
+          'server.lua'
+      }
+
+      dependencies {
+          'es_extended',
+          'ox_lib',
+          'ox_inventory',
+          'ox_target'
+      }
+
+  - action: write_file
+    file: ./resources/[nightlife]/nightlife_documents/config.lua
+    data: |
+      Config = {}
+
+      Config.ServerName = 'Nightlife RolePlay'
+
+      Config.Documents = {
+          id_card = {
+              item = 'id_card',
+              label = 'Személyi igazolvány',
+              jobs = false
+          },
+          driver_license = {
+              item = 'driver_license',
+              label = 'Jogosítvány',
+              jobs = false
+          },
+          car_document = {
+              item = 'car_document',
+              label = 'Forgalmi engedély',
+              jobs = false
+          },
+          medical_card = {
+              item = 'medical_card',
+              label = 'Egészségügyi kártya',
+              jobs = { ambulance = 0 }
+          },
+          weapon_license = {
+              item = 'weapon_license',
+              label = 'Fegyvertartási engedély',
+              jobs = { police = 2 }
+          },
+          police_badge = {
+              item = 'police_badge',
+              label = 'Rendőrségi jelvény',
+              jobs = { police = 0 }
+          }
+      }
+
+      Config.CityHall = vec3(-544.76, -204.13, 38.22)
+      Config.PoliceDesk = vec3(441.17, -981.92, 30.69)
+      Config.HospitalDesk = vec3(308.36, -595.29, 43.28)
+
+  - action: write_file
+    file: ./resources/[nightlife]/nightlife_documents/client.lua
+    data: |
+      local function notify(title, description, ntype)
+          lib.notify({
+              title = title,
+              description = description,
+              type = ntype or 'inform'
+          })
+      end
+
+      RegisterNetEvent('nightlife_documents:notify', notify)
+
+      RegisterNetEvent('nightlife_documents:display', function(title, content)
+          lib.alertDialog({
+              header = title,
+              content = content,
+              centered = true,
+              cancel = false
+          })
+      end)
+
+      RegisterNetEvent('nightlife_documents:openMenu', function()
+          lib.showContext('nightlife_documents_main')
+      end)
+
+      CreateThread(function()
+          lib.registerContext({
+              id = 'nightlife_documents_main',
+              title = 'Nightlife iratok',
+              options = {
+                  {
+                      title = 'Személyi igazolvány kiváltása',
+                      description = 'OX inventory metadata-val létrejövő egyedi irat.',
+                      icon = 'id-card',
+                      event = 'nightlife_documents:request',
+                      args = 'id_card'
+                  },
+                  {
+                      title = 'Jogosítvány kiváltása',
+                      description = 'Jogosítvány item létrehozása.',
+                      icon = 'car',
+                      event = 'nightlife_documents:request',
+                      args = 'driver_license'
+                  },
+                  {
+                      title = 'Forgalmi engedély kiváltása',
+                      description = 'RP jármű dokumentum.',
+                      icon = 'file-lines',
+                      event = 'nightlife_documents:request',
+                      args = 'car_document'
+                  }
+              }
+          })
+
+          exports.ox_target:addBoxZone({
+              coords = Config.CityHall,
+              size = vec3(2.0, 2.0, 2.0),
+              rotation = 0,
+              debug = false,
+              options = {
+                  {
+                      name = 'nightlife_cityhall_documents',
+                      icon = 'fa-solid fa-id-card',
+                      label = 'Iratok kiváltása',
+                      onSelect = function()
+                          lib.showContext('nightlife_documents_main')
+                      end
+                  }
+              }
+          })
+
+          exports.ox_target:addBoxZone({
+              coords = Config.PoliceDesk,
+              size = vec3(2.0, 2.0, 2.0),
+              rotation = 0,
+              debug = false,
+              options = {
+                  {
+                      name = 'nightlife_police_badge',
+                      icon = 'fa-solid fa-shield-halved',
+                      label = 'Rendőrségi iratok kiadása',
+                      groups = { police = 0 },
+                      onSelect = function()
+                          TriggerServerEvent('nightlife_documents:give', 'police_badge')
+                      end
+                  },
+                  {
+                      name = 'nightlife_weapon_license',
+                      icon = 'fa-solid fa-file-signature',
+                      label = 'Fegyverengedély kiadása',
+                      groups = { police = 2 },
+                      onSelect = function()
+                          TriggerServerEvent('nightlife_documents:give', 'weapon_license')
+                      end
+                  }
+              }
+          })
+
+          exports.ox_target:addBoxZone({
+              coords = Config.HospitalDesk,
+              size = vec3(2.0, 2.0, 2.0),
+              rotation = 0,
+              debug = false,
+              options = {
+                  {
+                      name = 'nightlife_medical_card',
+                      icon = 'fa-solid fa-notes-medical',
+                      label = 'Egészségügyi kártya kiadása',
+                      groups = { ambulance = 0 },
+                      onSelect = function()
+                          TriggerServerEvent('nightlife_documents:give', 'medical_card')
+                      end
+                  }
+              }
+          })
+      end)
+
+      RegisterCommand('iratok', function()
+          lib.showContext('nightlife_documents_main')
+      end)
+
+      RegisterNetEvent('nightlife_documents:request', function(docType)
+          TriggerServerEvent('nightlife_documents:give', docType)
+      end)
+
+  - action: write_file
+    file: ./resources/[nightlife]/nightlife_documents/server.lua
+    data: |
+      local ESX = exports['es_extended']:getSharedObject()
+
+      local function hasJob(xPlayer, jobs)
+          if not jobs then return true end
+          if not xPlayer or not xPlayer.job then return false end
+
+          local requiredGrade = jobs[xPlayer.job.name]
+          if requiredGrade == nil then return false end
+
+          return (xPlayer.job.grade or 0) >= requiredGrade
+      end
+
+      local function getPlayerNameData(xPlayer, source)
+          local fullName = GetPlayerName(source)
+
+          if xPlayer and xPlayer.getName then
+              local ok, result = pcall(function()
+                  return xPlayer.getName()
+              end)
+
+              if ok and result and result ~= '' then
+                  fullName = result
+              end
+          end
+
+          local firstName, lastName = fullName:match('^(%S+)%s+(.+)$')
+          return fullName, firstName or fullName, lastName or ''
+      end
+
+      local function shortIdentifier(identifier)
+          identifier = identifier or 'unknown'
+          return identifier:gsub(':', ''):sub(-8):upper()
+      end
+
+      local function makeMetadata(source, xPlayer, def)
+          local fullName, firstName, lastName = getPlayerNameData(xPlayer, source)
+          local identifier = xPlayer and xPlayer.identifier or GetPlayerIdentifier(source, 0)
+          local serial = ('NL-%s-%s'):format(os.date('%Y'), shortIdentifier(identifier))
+
+          return {
+              label = def.label,
+              description = ('Név: %s\nAzonosító: %s\nKiadva: %s\nSzerver: %s'):format(fullName, serial, os.date('%Y-%m-%d'), Config.ServerName),
+              type = def.label,
+              firstname = firstName,
+              lastname = lastName,
+              name = fullName,
+              serial = serial,
+              issued = os.date('%Y-%m-%d'),
+              server = Config.ServerName
+          }
+      end
+
+      RegisterNetEvent('nightlife_documents:give', function(docType)
+          local source = source
+          local xPlayer = ESX.GetPlayerFromId(source)
+          local def = Config.Documents[docType]
+
+          if not def then
+              TriggerClientEvent('nightlife_documents:notify', source, 'Nightlife iratok', 'Ismeretlen irat típus.', 'error')
+              return
+          end
+
+          if not hasJob(xPlayer, def.jobs) then
+              TriggerClientEvent('nightlife_documents:notify', source, 'Nightlife iratok', 'Ehhez nincs jogosultságod.', 'error')
+              return
+          end
+
+          local metadata = makeMetadata(source, xPlayer, def)
+          local canCarry = exports.ox_inventory:CanCarryItem(source, def.item, 1)
+
+          if not canCarry then
+              TriggerClientEvent('nightlife_documents:notify', source, 'Nightlife iratok', 'Nincs elég hely az inventorydban.', 'error')
+              return
+          end
+
+          exports.ox_inventory:AddItem(source, def.item, 1, metadata)
+          TriggerClientEvent('nightlife_documents:notify', source, 'Nightlife iratok', def.label .. ' kiadva.', 'success')
+      end)
+
+      local function documentText(metadata)
+          metadata = metadata or {}
+
+          return ('**Típus:** %s\n**Név:** %s\n**Azonosító:** %s\n**Kiadva:** %s\n**Szerver:** %s'):format(
+              metadata.type or metadata.label or 'Irat',
+              metadata.name or 'Ismeretlen',
+              metadata.serial or 'N/A',
+              metadata.issued or 'N/A',
+              metadata.server or Config.ServerName
+          )
+      end
+
+      local function showNearby(source, title, content)
+          local srcPed = GetPlayerPed(source)
+          local srcCoords = GetEntityCoords(srcPed)
+
+          TriggerClientEvent('nightlife_documents:display', source, title, content)
+
+          for _, playerId in ipairs(GetPlayers()) do
+              local target = tonumber(playerId)
+
+              if target and target ~= source then
+                  local targetPed = GetPlayerPed(target)
+                  local targetCoords = GetEntityCoords(targetPed)
+
+                  if #(srcCoords - targetCoords) <= 3.0 then
+                      TriggerClientEvent('nightlife_documents:display', target, title, content)
+                  end
+              end
+          end
+      end
+
+      exports('showDocument', function(event, item, inventory, slot, data)
+          if event ~= 'usedItem' then return end
+
+          local source = inventory.id
+          local slotData = exports.ox_inventory:GetSlot(source, slot)
+          local metadata = slotData and slotData.metadata or {}
+
+          local title = metadata.type or item.label or 'Nightlife irat'
+          showNearby(source, title, documentText(metadata))
+      end)
+
+  ###########################################################################
+  # Nightlife RP target, stash és shop rendszer
+  ###########################################################################
+
+  - action: ensure_dir
+    path: ./resources/[nightlife]/nightlife_rp
+
+  - action: write_file
+    file: ./resources/[nightlife]/nightlife_rp/fxmanifest.lua
+    data: |
+      fx_version 'cerulean'
+      game 'gta5'
+
+      author 'Imre2020'
+      description 'Nightlife RolePlay - OX target, shop és stash alap RP rendszer'
+      version '1.0.0'
+
+      lua54 'yes'
+
+      shared_scripts {
+          '@ox_lib/init.lua'
+      }
+
+      client_scripts {
+          'client.lua'
+      }
+
+      server_scripts {
+          'server.lua'
+      }
+
+      dependencies {
+          'ox_lib',
+          'ox_inventory',
+          'ox_target'
+      }
+
+  - action: write_file
+    file: ./resources/[nightlife]/nightlife_rp/server.lua
+    data: |
+      CreateThread(function()
+          Wait(2000)
+
+          exports.ox_inventory:RegisterStash('nightlife_personal_locker', 'Személyes szekrény', 50, 50000, true)
+          exports.ox_inventory:RegisterStash('nightlife_police_evidence', 'Rendőrségi bizonyítéktár', 100, 150000, false, { police = 0 })
+          exports.ox_inventory:RegisterStash('nightlife_police_armory', 'Rendőrségi felszerelés', 80, 120000, false, { police = 0 })
+          exports.ox_inventory:RegisterStash('nightlife_ems_storage', 'Mentős raktár', 80, 120000, false, { ambulance = 0 })
+          exports.ox_inventory:RegisterStash('nightlife_mechanic_storage', 'Szerelő raktár', 80, 120000, false, { mechanic = 0 })
+
+          exports.ox_inventory:RegisterShop('NightlifeCityHall', {
+              name = 'Városháza pult',
+              inventory = {
+                  { name = 'phone', price = 500 },
+                  { name = 'radio', price = 750 },
+                  { name = 'business_card', price = 25 },
+                  { name = 'contract', price = 50 },
+                  { name = 'receipt', price = 5 }
+              },
+              locations = {
+                  vec3(-544.76, -204.13, 38.22)
+              }
+          })
+
+          exports.ox_inventory:RegisterShop('NightlifePoliceShop', {
+              name = 'Rendőrségi felszerelés',
+              groups = { police = 0 },
+              inventory = {
+                  { name = 'handcuffs', price = 0 },
+                  { name = 'ziptie', price = 0 },
+                  { name = 'evidence_bag', price = 0 },
+                  { name = 'bodycam', price = 0 },
+                  { name = 'dashcam', price = 0 },
+                  { name = 'megaphone', price = 0 },
+                  { name = 'WEAPON_FLASHLIGHT', price = 0 },
+                  { name = 'WEAPON_NIGHTSTICK', price = 0 },
+                  { name = 'WEAPON_STUNGUN', price = 0 }
+              },
+              locations = {
+                  vec3(452.21, -980.03, 30.68)
+              }
+          })
+
+          exports.ox_inventory:RegisterShop('NightlifeEMSShop', {
+              name = 'Mentős felszerelés',
+              groups = { ambulance = 0 },
+              inventory = {
+                  { name = 'bandage', price = 0 },
+                  { name = 'medikit', price = 0 },
+                  { name = 'firstaid', price = 0 },
+                  { name = 'radio', price = 0 }
+              },
+              locations = {
+                  vec3(306.36, -601.51, 43.28)
+              }
+          })
+
+          exports.ox_inventory:RegisterShop('NightlifeMechanicShop', {
+              name = 'Szerelő felszerelés',
+              groups = { mechanic = 0 },
+              inventory = {
+                  { name = 'repairkit', price = 0 },
+                  { name = 'lockpick', price = 150 },
+                  { name = 'radio', price = 0 }
+              },
+              locations = {
+                  vec3(-347.29, -133.38, 39.01)
+              }
+          })
+      end)
+
+  - action: write_file
+    file: ./resources/[nightlife]/nightlife_rp/client.lua
+    data: |
+      CreateThread(function()
+          exports.ox_target:addBoxZone({
+              coords = vec3(-544.76, -204.13, 38.22),
+              size = vec3(2.0, 2.0, 2.0),
+              rotation = 0,
+              options = {
+                  {
+                      name = 'nightlife_cityhall_shop',
+                      icon = 'fa-solid fa-building-columns',
+                      label = 'Városháza pult',
+                      onSelect = function()
+                          exports.ox_inventory:openInventory('shop', { type = 'NightlifeCityHall' })
+                      end
+                  }
+              }
+          })
+
+          exports.ox_target:addBoxZone({
+              coords = vec3(452.21, -980.03, 30.68),
+              size = vec3(2.0, 2.0, 2.0),
+              rotation = 0,
+              options = {
+                  {
+                      name = 'nightlife_police_shop',
+                      icon = 'fa-solid fa-shield-halved',
+                      label = 'Rendőrségi felszerelés',
+                      groups = { police = 0 },
+                      onSelect = function()
+                          exports.ox_inventory:openInventory('shop', { type = 'NightlifePoliceShop' })
+                      end
+                  },
+                  {
+                      name = 'nightlife_police_evidence',
+                      icon = 'fa-solid fa-box-archive',
+                      label = 'Bizonyítéktár megnyitása',
+                      groups = { police = 0 },
+                      onSelect = function()
+                          exports.ox_inventory:openInventory('stash', 'nightlife_police_evidence')
+                      end
+                  },
+                  {
+                      name = 'nightlife_police_armory',
+                      icon = 'fa-solid fa-boxes-stacked',
+                      label = 'Rendőrségi raktár megnyitása',
+                      groups = { police = 0 },
+                      onSelect = function()
+                          exports.ox_inventory:openInventory('stash', 'nightlife_police_armory')
+                      end
+                  }
+              }
+          })
+
+          exports.ox_target:addBoxZone({
+              coords = vec3(306.36, -601.51, 43.28),
+              size = vec3(2.0, 2.0, 2.0),
+              rotation = 0,
+              options = {
+                  {
+                      name = 'nightlife_ems_shop',
+                      icon = 'fa-solid fa-briefcase-medical',
+                      label = 'Mentős felszerelés',
+                      groups = { ambulance = 0 },
+                      onSelect = function()
+                          exports.ox_inventory:openInventory('shop', { type = 'NightlifeEMSShop' })
+                      end
+                  },
+                  {
+                      name = 'nightlife_ems_storage',
+                      icon = 'fa-solid fa-box-archive',
+                      label = 'Mentős raktár megnyitása',
+                      groups = { ambulance = 0 },
+                      onSelect = function()
+                          exports.ox_inventory:openInventory('stash', 'nightlife_ems_storage')
+                      end
+                  }
+              }
+          })
+
+          exports.ox_target:addBoxZone({
+              coords = vec3(-347.29, -133.38, 39.01),
+              size = vec3(2.0, 2.0, 2.0),
+              rotation = 0,
+              options = {
+                  {
+                      name = 'nightlife_mechanic_shop',
+                      icon = 'fa-solid fa-screwdriver-wrench',
+                      label = 'Szerelő felszerelés',
+                      groups = { mechanic = 0 },
+                      onSelect = function()
+                          exports.ox_inventory:openInventory('shop', { type = 'NightlifeMechanicShop' })
+                      end
+                  },
+                  {
+                      name = 'nightlife_mechanic_storage',
+                      icon = 'fa-solid fa-box-archive',
+                      label = 'Szerelő raktár megnyitása',
+                      groups = { mechanic = 0 },
+                      onSelect = function()
+                          exports.ox_inventory:openInventory('stash', 'nightlife_mechanic_storage')
+                      end
+                  }
+              }
+          })
+
+          exports.ox_target:addBoxZone({
+              coords = vec3(243.85, -1078.88, 29.29),
+              size = vec3(2.0, 2.0, 2.0),
+              rotation = 0,
+              options = {
+                  {
+                      name = 'nightlife_personal_locker',
+                      icon = 'fa-solid fa-box',
+                      label = 'Személyes szekrény',
+                      onSelect = function()
+                          exports.ox_inventory:openInventory('stash', 'nightlife_personal_locker')
+                      end
+                  }
+              }
+          })
+      end)
+
+  ###########################################################################
+  # Nightlife információs resource
+  ###########################################################################
+
+  - action: ensure_dir
+    path: ./resources/[nightlife]/nightlife_info
+
+  - action: write_file
+    file: ./resources/[nightlife]/nightlife_info/fxmanifest.lua
+    data: |
+      fx_version 'cerulean'
+      game 'gta5'
+
+      author 'Imre2020'
+      description 'Nightlife RolePlay magyar információs resource'
+      version '3.0.0'
+
+      lua54 'yes'
+
+      shared_scripts {
+          '@ox_lib/init.lua'
+      }
+
+      client_scripts {
+          'client.lua'
+      }
+
+      server_scripts {
+          'server.lua'
+      }
+
+  - action: write_file
+    file: ./resources/[nightlife]/nightlife_info/client.lua
+    data: |
+      CreateThread(function()
+          Wait(3000)
+
+          TriggerEvent('chat:addSuggestion', '/discord', 'Megmutatja a Nightlife RolePlay Discord linkjét.')
+          TriggerEvent('chat:addSuggestion', '/szabalyzat', 'Megmutatja a szerver alap szabályait.')
+          TriggerEvent('chat:addSuggestion', '/segitseg', 'Segítség kezdő játékosoknak.')
+          TriggerEvent('chat:addSuggestion', '/telefon', 'Telefon információk.')
+          TriggerEvent('chat:addSuggestion', '/inventory', 'Inventory információk.')
+          TriggerEvent('chat:addSuggestion', '/iratok', 'Iratok kiváltása.')
+      end)
+
+      RegisterNetEvent('nightlife:notify', function(title, description)
+          lib.notify({
+              title = title,
+              description = description,
+              type = 'inform'
+          })
+      end)
+
+  - action: write_file
+    file: ./resources/[nightlife]/nightlife_info/server.lua
+    data: |
+      local discordLink = "{{discordLink}}"
+
+      local function msg(source, title, text)
+          TriggerClientEvent("chat:addMessage", source, {
+              args = { title, text }
+          })
+      end
+
+      RegisterCommand("discord", function(source)
+          msg(source, "Nightlife RolePlay", "Discord szerverünk: " .. discordLink)
+      end, false)
+
+      RegisterCommand("szabalyzat", function(source)
+          msg(source, "Szabályzat", "1. Tiszteld a többi játékost és a staff csapatot.")
+          msg(source, "Szabályzat", "2. Tilos a VDM, RDM, powergaming, metagaming, cheat és bug kihasználás.")
+          msg(source, "Szabályzat", "3. RP szituációban maradj karakterben, és ne rontsd mások játékélményét.")
+          msg(source, "Szabályzat", "4. Admin döntést Discord ticketben lehet kulturáltan jelezni.")
+      end, false)
+
+      RegisterCommand("segitseg", function(source)
+          msg(source, "Segítség", "Hasznos parancsok: /discord, /szabalyzat, /telefon, /inventory, /iratok")
+          msg(source, "Segítség", "Ha elakadtál, keresd a staff csapatot Discordon vagy játékon belül.")
+      end, false)
+
+      RegisterCommand("telefon", function(source)
+          msg(source, "Telefon", "A szerveren NPWD telefon van. Alap nyitógomb: F1.")
+      end, false)
+
+      RegisterCommand("inventory", function(source)
+          msg(source, "Inventory", "A szerveren ox_inventory van. Alap nyitógomb: F2 / TAB.")
+      end, false)
+
+  ###########################################################################
+  # Nightlife SQL kiegészítések ESX kompatibilitáshoz
+  ###########################################################################
+
+  - action: write_file
+    file: ./tmp/nightlife_items.sql
+    data: |
+      INSERT INTO `items` (`name`, `label`, `weight`, `rare`, `can_remove`) VALUES
+      ('phone', 'Telefon', 1, 0, 1),
+      ('radio', 'Rádió', 1, 0, 1),
+      ('id_card', 'Személyi igazolvány', 1, 0, 1),
+      ('driver_license', 'Jogosítvány', 1, 0, 1),
+      ('weapon_license', 'Fegyvertartási engedély', 1, 0, 1),
+      ('medical_card', 'Egészségügyi kártya', 1, 0, 1),
+      ('police_badge', 'Rendőrségi jelvény', 1, 0, 1),
+      ('car_document', 'Forgalmi engedély', 1, 0, 1),
+      ('business_card', 'Névjegykártya', 1, 0, 1),
+      ('contract', 'Szerződés', 1, 0, 1),
+      ('receipt', 'Nyugta', 1, 0, 1),
+      ('evidence_bag', 'Bizonyítékos tasak', 1, 0, 1),
+      ('handcuffs', 'Bilincs', 1, 0, 1),
+      ('ziptie', 'Gyorskötöző', 1, 0, 1),
+      ('bodycam', 'Testkamera', 1, 0, 1),
+      ('dashcam', 'Fedélzeti kamera', 1, 0, 1),
+      ('megaphone', 'Megafon', 1, 0, 1),
+      ('repairkit', 'Szerelőkészlet', 1, 0, 1),
+      ('medikit', 'Orvosi csomag', 1, 0, 1),
+      ('firstaid', 'Elsősegély csomag', 1, 0, 1),
+      ('tablet', 'Tablet', 1, 0, 1),
+      ('vehicle_key', 'Járműkulcs', 1, 0, 1)
+      ON DUPLICATE KEY UPDATE
+        `label` = VALUES(`label`),
+        `weight` = VALUES(`weight`),
+        `rare` = VALUES(`rare`),
+        `can_remove` = VALUES(`can_remove`);
+
+  - action: query_database
+    file: ./tmp/nightlife_items.sql
+
+  ###########################################################################
+  # Magyar server.cfg
+  ###########################################################################
+
+  - action: write_file
+    file: ./server.cfg
+    data: |
+      ############################################################
+      # Nightlife RolePlay - Magyar ESX + OX RP Pack
+      # Készítette: Imre2020
+      ############################################################
+
+      ############################################################
+      # txAdmin alap adatok
+      ############################################################
+
+      {{serverEndpoints}}
+
+      sv_licenseKey "{{svLicense}}"
+      sv_maxclients {{maxClients}}
+
+      ############################################################
+      # Szerver megjelenés
+      ############################################################
+
+      sv_hostname "{{serverName}} | Nightlife RolePlay"
+      sets sv_projectName "Nightlife RolePlay"
+      sets sv_projectDesc "Magyar ESX RolePlay szerver OX inventoryval, OX targettel, telefonnal és RP iratrendszerrel."
+      sets tags "{{serverTags}}"
+      sets locale "{{serverLocale}}"
+      sets Discord "{{discordLink}}"
+
+      # Saját ikonhoz tegyél server-icon.png fájlt a fő mappába.
+      # load_server_icon server-icon.png
+
+      ############################################################
+      # Adatbázis
+      ############################################################
+
+      set mysql_connection_string "{{dbConnectionString}}"
+
+      ############################################################
+      # FiveM / OneSync / build
+      ############################################################
+
+      set onesync on
+      sv_enforceGameBuild 3258
+      set resources_useSystemChat true
+      sv_scriptHookAllowed 0
+
+      ############################################################
+      # Biztonság
+      ############################################################
+
+      sv_enableNetworkedSounds false
+      sv_enableNetworkedScriptEntityStates false
+      sv_enableNetworkedPhoneExplosions false
+      sv_filterRequestControl 2
+
+      ############################################################
+      # ESX
+      ############################################################
+
+      setr esx:locale "hu"
+      # Ha magyar locale miatt valamelyik ESX resource hibázik, állítsd en-re:
+      # setr esx:locale "en"
+
+      ############################################################
+      # OX inventory
+      ############################################################
+
+      setr inventory:framework "esx"
+      setr inventory:locale "hu"
+      setr inventory:slots 50
+      setr inventory:weight 30000
+      setr inventory:target true
+      setr inventory:keys ["F2", "K", "TAB"]
+      setr inventory:police ["police", "sheriff"]
+      set inventory:versioncheck true
+      set inventory:randomloot true
+
+      ############################################################
+      # NPWD telefon
+      ############################################################
+
+      set npwd:framework esx
+
+      ############################################################
+      # pma-voice
+      ############################################################
+
+      setr voice_enableRadioAnim 1
+      setr voice_useNativeAudio true
+      setr voice_useSendingRangeOnly true
+      setr voice_defaultCycle "Z"
+      setr voice_defaultVolume 0.6
+
+      ############################################################
+      # Admin jogosultságok
+      ############################################################
+
+      add_principal group.admin group.user
+
+      add_ace group.admin command allow
+      add_ace group.admin command.quit deny
+
+      add_ace resource.es_extended command.add_ace allow
+      add_ace resource.es_extended command.add_principal allow
+      add_ace resource.es_extended command.remove_principal allow
+      add_ace resource.es_extended command.stop allow
+
+      {{addPrincipalsMaster}}
+
+      ############################################################
+      # Alap CFX resource-ok
+      ############################################################
+
+      ensure chat
+      ensure spawnmanager
+      ensure sessionmanager
+      ensure hardcap
+
+      ############################################################
+      # Standalone
+      ############################################################
+
+      ensure bob74_ipl
+      ensure pma-voice
+      ensure screenshot-basic
+
+      ############################################################
+      # OX indulási sorrend
+      ############################################################
+
+      ensure oxmysql
+      ensure ox_lib
+
+      ############################################################
+      # ESX core - csak ami kell, nincs multicharacter
+      ############################################################
+
+      ensure es_extended
+      ensure esx_context
+      ensure esx_menu_default
+      ensure esx_menu_dialog
+      ensure esx_menu_list
+      ensure esx_notify
+      ensure esx_progressbar
+      ensure esx_textui
+      ensure esx_identity
+
+      ############################################################
+      # OX target + inventory
+      ############################################################
+
+      ensure ox_target
+      ensure ox_inventory
+
+      ############################################################
+      # ESX szükséges addon alapok
+      ############################################################
+
+      ensure esx_addonaccount
+      ensure esx_addoninventory
+      ensure esx_datastore
+      ensure esx_license
+      ensure cron
+
+      ############################################################
+      # ESX RP addonok - csak válogatott, nem teljes pakk
+      ############################################################
+
+      ensure esx_status
+      ensure esx_basicneeds
+      ensure esx_billing
+      ensure esx_society
+      ensure esx_policejob
+      ensure esx_ambulancejob
+      ensure esx_mechanicjob
+      ensure esx_banking
+      ensure esx_vehicleshop
+      ensure esx_joblisting
+      ensure esx_rpchat
+      ensure esx_cruisecontrol
+      ensure esx_lscustom
+
+      ############################################################
+      # Kinézet / telefon
+      ############################################################
+
+      ensure illenium-appearance
+      ensure npwd
+
+      ############################################################
+      # Nightlife saját RP resource-ok
+      ############################################################
+
+      ensure nightlife_documents
+      ensure nightlife_rp
+      ensure nightlife_info
+
+      ############################################################
+      # Megjegyzések
+      ############################################################
+      # NINCS multicharacter:
+      # esx_multicharacter nincs indítva és a recipe törli is.
+      #
+      # OX inventory migrálás régi ESX inventoryból:
+      # convertinventory esx
+      #
+      # Ha property inventoryt is használsz:
+      # convertinventory esxproperty
+      ############################################################
+
+  ###########################################################################
+  # Változók behelyettesítése
+  ###########################################################################
+
+  - action: replace_string
+    mode: all_vars
+    file:
+      - ./server.cfg
+      - ./resources/[nightlife]/nightlife_info/server.lua
+
+  ###########################################################################
+  # Takarítás
+  ###########################################################################
+
+  - action: remove_path
+    path: ./tmp
