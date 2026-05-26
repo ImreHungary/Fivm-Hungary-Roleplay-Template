@@ -1,0 +1,356 @@
+$engine: 3
+$onesync: on
+
+name: Nightlife RolePlay - Compact ESX OX
+version: 4.0.0
+author: Imre2020
+description: Kompakt magyar ESX + OX txAdmin recipe multicharacter nélkül, inventoryval, targettel, telefonnal és RP alapokkal.
+
+variables:
+  discordLink: "discord.gg/ide-ird-a-discord-linket"
+  serverTags: "magyar, roleplay, rp, nightlife, esx, ox, inventory, target, telefon"
+  serverLocale: "hu-HU"
+
+tasks:
+  - action: connect_database
+
+  - action: download_github
+    src: https://github.com/esx-framework/esx-core
+    ref: main
+    dest: ./tmp/core
+
+  - action: query_database
+    file: ./tmp/core/[SQL]/legacy.sql
+
+  - action: move_path
+    src: ./tmp/core/[core]
+    dest: ./resources/[core]
+
+  - action: download_github
+    src: https://github.com/esx-framework/ESX-Legacy-Addons
+    ref: main
+    dest: ./tmp/addons
+
+  - action: move_path
+    src: ./tmp/addons/[esx_addons]
+    dest: ./resources/[esx_addons]
+
+  # NEM kell multicharacter és fölösleges ESX inventory/phone/skin.
+  - action: remove_path
+    path: ./resources/[core]/esx_multicharacter
+
+  - action: remove_path
+    path: ./resources/[core]/esx_inventory
+
+  - action: remove_path
+    path: ./resources/[core]/esx_skin
+
+  - action: remove_path
+    path: ./resources/[core]/skinchanger
+
+  - action: remove_path
+    path: ./resources/[esx_addons]/esx_phone
+
+  - action: remove_path
+    path: ./resources/[esx_addons]/esx_shops
+
+  - action: remove_path
+    path: ./resources/[esx_addons]/esx_weaponshop
+
+  - action: remove_path
+    path: ./resources/[esx_addons]/esx_drugs
+
+  - action: replace_string
+    file: ./resources/[core]/es_extended/shared/config/main.lua
+    search: 'Config.CustomInventory = false'
+    replace: 'Config.CustomInventory = "ox"'
+
+  # OX rendszer
+  - action: ensure_dir
+    path: ./resources/[ox]
+
+  - action: download_file
+    url: https://github.com/overextended/oxmysql/releases/latest/download/oxmysql.zip
+    path: ./tmp/oxmysql.zip
+
+  - action: unzip
+    src: ./tmp/oxmysql.zip
+    dest: ./resources/[ox]
+
+  - action: download_file
+    url: https://github.com/overextended/ox_lib/releases/latest/download/ox_lib.zip
+    path: ./tmp/ox_lib.zip
+
+  - action: unzip
+    src: ./tmp/ox_lib.zip
+    dest: ./resources/[ox]
+
+  - action: download_file
+    url: https://github.com/overextended/ox_target/releases/latest/download/ox_target.zip
+    path: ./tmp/ox_target.zip
+
+  - action: unzip
+    src: ./tmp/ox_target.zip
+    dest: ./resources/[ox]
+
+  - action: download_file
+    url: https://github.com/overextended/ox_inventory/releases/latest/download/ox_inventory.zip
+    path: ./tmp/ox_inventory.zip
+
+  - action: unzip
+    src: ./tmp/ox_inventory.zip
+    dest: ./resources/[ox]
+
+  # Standalone
+  - action: ensure_dir
+    path: ./resources/[standalone]
+
+  - action: download_github
+    src: https://github.com/Bob74/bob74_ipl
+    ref: master
+    dest: ./resources/[standalone]/bob74_ipl
+
+  - action: download_github
+    src: https://github.com/AvarianKnight/pma-voice
+    ref: main
+    dest: ./resources/[standalone]/pma-voice
+
+  - action: download_file
+    url: https://github.com/project-error/screenshot-basic/releases/download/1.0.1/screenshot-basic.zip
+    path: ./tmp/screenshot-basic.zip
+
+  - action: unzip
+    src: ./tmp/screenshot-basic.zip
+    dest: ./resources/[standalone]/screenshot-basic
+
+  - action: download_file
+    url: https://github.com/iLLeniumStudios/illenium-appearance/releases/latest/download/illenium-appearance.zip
+    path: ./tmp/illenium-appearance.zip
+
+  - action: unzip
+    src: ./tmp/illenium-appearance.zip
+    dest: ./resources/[standalone]
+
+  # Telefon
+  - action: ensure_dir
+    path: ./resources/[phone]
+
+  - action: download_file
+    url: https://github.com/project-error/npwd/releases/latest/download/npwd.zip
+    path: ./tmp/npwd.zip
+
+  - action: unzip
+    src: ./tmp/npwd.zip
+    dest: ./resources/[phone]
+
+  - action: query_database
+    file: ./resources/[phone]/npwd/import.sql
+
+  # Nightlife kompakt saját resource
+  - action: ensure_dir
+    path: ./resources/[nightlife]/nightlife_core
+
+  - action: write_file
+    file: ./resources/[nightlife]/nightlife_core/fxmanifest.lua
+    data: |
+      fx_version 'cerulean'
+      game 'gta5'
+      lua54 'yes'
+      author 'Imre2020'
+      description 'Nightlife RolePlay kompakt magyar RP alap'
+      shared_scripts { '@ox_lib/init.lua' }
+      client_scripts { 'client.lua' }
+      server_scripts { '@oxmysql/lib/MySQL.lua', 'server.lua' }
+      dependencies { 'es_extended', 'ox_lib', 'ox_inventory', 'ox_target' }
+
+  - action: write_file
+    file: ./resources/[nightlife]/nightlife_core/client.lua
+    data: |
+      CreateThread(function()
+        Wait(3000)
+        TriggerEvent('chat:addSuggestion','/discord','Discord link')
+        TriggerEvent('chat:addSuggestion','/szabalyzat','Szerver szabályzat')
+        TriggerEvent('chat:addSuggestion','/irat','Személyi igazolvány kiváltása')
+        TriggerEvent('chat:addSuggestion','/jogsi','Jogosítvány kiváltása')
+
+        exports.ox_target:addBoxZone({
+          coords=vec3(-544.76,-204.13,38.22), size=vec3(2,2,2), rotation=0,
+          options={
+            {name='nl_docs', icon='fa-solid fa-id-card', label='Iratok kiváltása', onSelect=function() TriggerServerEvent('nl:doc','id_card') end},
+            {name='nl_shop', icon='fa-solid fa-store', label='Városháza bolt', onSelect=function() exports.ox_inventory:openInventory('shop',{type='NightlifeShop'}) end}
+          }
+        })
+
+        exports.ox_target:addBoxZone({
+          coords=vec3(452.21,-980.03,30.68), size=vec3(2,2,2), rotation=0,
+          options={
+            {name='nl_police_shop', icon='fa-solid fa-shield-halved', label='Rendőrségi felszerelés', groups={police=0}, onSelect=function() exports.ox_inventory:openInventory('shop',{type='NightlifePolice'}) end},
+            {name='nl_evidence', icon='fa-solid fa-box', label='Bizonyítéktár', groups={police=0}, onSelect=function() exports.ox_inventory:openInventory('stash','nightlife_evidence') end}
+          }
+        })
+      end)
+
+      RegisterNetEvent('nl:showDoc', function(data)
+        lib.alertDialog({header=data.title or 'Nightlife irat', content=data.text or 'Nincs adat.', centered=true})
+      end)
+
+  - action: write_file
+    file: ./resources/[nightlife]/nightlife_core/server.lua
+    data: |
+      local ESX = exports.es_extended:getSharedObject()
+      local discord = "{{discordLink}}"
+
+      local function chat(src, title, msg)
+        TriggerClientEvent('chat:addMessage', src, {args={title,msg}})
+      end
+
+      RegisterCommand('discord', function(src) chat(src,'Nightlife RolePlay','Discord: '..discord) end)
+      RegisterCommand('szabalyzat', function(src)
+        chat(src,'Szabályzat','Tilos: VDM, RDM, PG, MG, cheat, bug kihasználás.')
+        chat(src,'Szabályzat','RP közben maradj karakterben és tiszteld a többieket.')
+      end)
+      RegisterCommand('irat', function(src) TriggerEvent('nl:giveDoc', src, 'id_card') end)
+      RegisterCommand('jogsi', function(src) TriggerEvent('nl:giveDoc', src, 'driver_license') end)
+
+      CreateThread(function()
+        Wait(2500)
+        exports.ox_inventory:RegisterStash('nightlife_evidence','Bizonyítéktár',100,150000,false,{police=0})
+        exports.ox_inventory:RegisterShop('NightlifeShop',{
+          name='Városháza bolt',
+          inventory={{name='phone',price=500},{name='radio',price=750},{name='id_card',price=100},{name='driver_license',price=250}},
+          locations={vec3(-544.76,-204.13,38.22)}
+        })
+        exports.ox_inventory:RegisterShop('NightlifePolice',{
+          name='Rendőrségi felszerelés',
+          groups={police=0},
+          inventory={{name='radio',price=0},{name='handcuffs',price=0},{name='evidence_bag',price=0},{name='WEAPON_STUNGUN',price=0}},
+          locations={vec3(452.21,-980.03,30.68)}
+        })
+      end)
+
+      RegisterNetEvent('nl:doc', function(item) TriggerEvent('nl:giveDoc', source, item) end)
+
+      AddEventHandler('nl:giveDoc', function(src, item)
+        local xPlayer = ESX.GetPlayerFromId(src)
+        local name = xPlayer and xPlayer.getName() or GetPlayerName(src)
+        local meta = {
+          label = item == 'driver_license' and 'Jogosítvány' or 'Személyi igazolvány',
+          description = 'Név: '..name..'\nKiadva: '..os.date('%Y-%m-%d')..'\nSzerver: Nightlife RolePlay',
+          name = name,
+          issued = os.date('%Y-%m-%d')
+        }
+        exports.ox_inventory:AddItem(src, item, 1, meta)
+      end)
+
+  # OX itemek minimális hozzáadása
+  - action: replace_string
+    file: ./resources/[ox]/ox_inventory/data/items.lua
+    search: "return {"
+    replace: |
+      return {
+        ['id_card'] = { label = 'Személyi igazolvány', weight = 10, stack = false, close = true, consume = 0 },
+        ['driver_license'] = { label = 'Jogosítvány', weight = 10, stack = false, close = true, consume = 0 },
+        ['handcuffs'] = { label = 'Bilincs', weight = 350, stack = false, close = true, consume = 0 },
+        ['evidence_bag'] = { label = 'Bizonyítékos tasak', weight = 25, stack = true, close = true, consume = 0 },
+
+  # SQL itemek ESX kompatibilitáshoz
+  - action: write_file
+    file: ./tmp/nightlife_items.sql
+    data: |
+      INSERT INTO items (name,label,weight,rare,can_remove) VALUES
+      ('phone','Telefon',1,0,1),('radio','Rádió',1,0,1),('id_card','Személyi igazolvány',1,0,1),
+      ('driver_license','Jogosítvány',1,0,1),('handcuffs','Bilincs',1,0,1),('evidence_bag','Bizonyítékos tasak',1,0,1)
+      ON DUPLICATE KEY UPDATE label=VALUES(label), weight=VALUES(weight), rare=VALUES(rare), can_remove=VALUES(can_remove);
+
+  - action: query_database
+    file: ./tmp/nightlife_items.sql
+
+  - action: write_file
+    file: ./server.cfg
+    data: |
+      {{serverEndpoints}}
+      sv_licenseKey "{{svLicense}}"
+      sv_maxclients {{maxClients}}
+
+      sv_hostname "{{serverName}} | Nightlife RolePlay"
+      sets sv_projectName "Nightlife RolePlay"
+      sets sv_projectDesc "Magyar ESX + OX RolePlay szerver inventoryval, targettel és telefonnal."
+      sets tags "{{serverTags}}"
+      sets locale "{{serverLocale}}"
+      sets Discord "{{discordLink}}"
+
+      set mysql_connection_string "{{dbConnectionString}}"
+      set onesync on
+      sv_enforceGameBuild 3258
+      sv_scriptHookAllowed 0
+
+      setr esx:locale "hu"
+      setr inventory:framework "esx"
+      setr inventory:locale "hu"
+      setr inventory:target true
+      setr inventory:slots 50
+      setr inventory:weight 30000
+      set npwd:framework esx
+
+      setr voice_useNativeAudio true
+      setr voice_useSendingRangeOnly true
+      setr voice_defaultCycle "Z"
+      setr voice_defaultVolume 0.6
+
+      add_principal group.admin group.user
+      add_ace group.admin command allow
+      add_ace group.admin command.quit deny
+      add_ace resource.es_extended command.add_ace allow
+      add_ace resource.es_extended command.add_principal allow
+      add_ace resource.es_extended command.remove_principal allow
+      add_ace resource.es_extended command.stop allow
+      {{addPrincipalsMaster}}
+
+      ensure oxmysql
+      ensure ox_lib
+      ensure bob74_ipl
+      ensure pma-voice
+      ensure screenshot-basic
+
+      ensure es_extended
+      ensure esx_context
+      ensure esx_menu_default
+      ensure esx_menu_dialog
+      ensure esx_menu_list
+      ensure esx_notify
+      ensure esx_progressbar
+      ensure esx_textui
+      ensure esx_identity
+
+      ensure ox_target
+      ensure ox_inventory
+
+      ensure esx_addonaccount
+      ensure esx_addoninventory
+      ensure esx_datastore
+      ensure esx_license
+      ensure cron
+      ensure esx_status
+      ensure esx_basicneeds
+      ensure esx_billing
+      ensure esx_society
+      ensure esx_policejob
+      ensure esx_ambulancejob
+      ensure esx_mechanicjob
+      ensure esx_banking
+      ensure esx_vehicleshop
+      ensure esx_joblisting
+      ensure esx_rpchat
+
+      ensure illenium-appearance
+      ensure npwd
+      ensure nightlife_core
+
+  - action: replace_string
+    mode: all_vars
+    file:
+      - ./server.cfg
+      - ./resources/[nightlife]/nightlife_core/server.lua
+
+  - action: remove_path
+    path: ./tmp
